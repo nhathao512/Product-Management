@@ -1,0 +1,40 @@
+﻿using Microsoft.EntityFrameworkCore;
+using ProductManagementAPI.Data;
+using Swashbuckle.AspNetCore.SwaggerUI;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Lắng nghe trên tất cả network interfaces, không chỉ localhost
+builder.WebHost.UseUrls("http://0.0.0.0:7116");
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin() 
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+builder.Services.AddControllers();
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+var app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Product Management API V1");
+    c.RoutePrefix = string.Empty;
+});
+
+app.UseCors("AllowAll");
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
