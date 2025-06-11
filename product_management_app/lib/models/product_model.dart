@@ -1,9 +1,13 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
+
 class Product {
   final int id;
   final String name;
   final String description;
   final double price;
   final int stock;
+  final String? imageUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -13,6 +17,7 @@ class Product {
     required this.description,
     required this.price,
     required this.stock,
+    this.imageUrl,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -24,6 +29,7 @@ class Product {
       description: json['description'],
       price: json['price'].toDouble(),
       stock: json['stock'],
+      imageUrl: json['imageUrl'],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
     );
@@ -36,6 +42,7 @@ class Product {
       'description': description,
       'price': price,
       'stock': stock,
+      'imageUrl': imageUrl,
     };
   }
 }
@@ -45,21 +52,33 @@ class CreateProductRequest {
   final String description;
   final double price;
   final int stock;
+  final File? image;
 
   CreateProductRequest({
     required this.name,
     required this.description,
     required this.price,
     required this.stock,
+    this.image,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
+  Future<Map<String, dynamic>> toJson() async {
+    final map = {
       'name': name,
       'description': description,
       'price': price,
-      'stock': stock,
+      'stock':
+          stock.toString(), // Đảm bảo stock là chuỗi để phù hợp với FormData
     };
+
+    if (image != null) {
+      map['image'] = await MultipartFile.fromFile(
+        image!.path,
+        filename: image!.path.split('/').last,
+      );
+    }
+
+    return map;
   }
 }
 

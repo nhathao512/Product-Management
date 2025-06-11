@@ -40,6 +40,10 @@ namespace ProductManagementAPI.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -58,38 +62,11 @@ namespace ProductManagementAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", t =>
+                        {
+                            t.HasCheckConstraint("CK_Product_Price", "[Price] > 0");
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2025, 6, 9, 14, 35, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Laptop Dell Inspiron 15",
-                            Name = "Laptop Dell",
-                            Price = 15000000m,
-                            Stock = 10,
-                            UpdatedAt = new DateTime(2025, 6, 9, 14, 35, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2025, 6, 9, 14, 35, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Apple iPhone 14 Pro Max",
-                            Name = "iPhone 14",
-                            Price = 25000000m,
-                            Stock = 5,
-                            UpdatedAt = new DateTime(2025, 6, 9, 14, 35, 0, 0, DateTimeKind.Unspecified)
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CreatedAt = new DateTime(2025, 6, 9, 14, 35, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Samsung Galaxy S23 Ultra",
-                            Name = "Samsung Galaxy S23",
-                            Price = 22000000m,
-                            Stock = 8,
-                            UpdatedAt = new DateTime(2025, 6, 9, 14, 35, 0, 0, DateTimeKind.Unspecified)
+                            t.HasCheckConstraint("CK_Product_Stock", "[Stock] >= 0");
                         });
                 });
 #pragma warning restore 612, 618
