@@ -173,7 +173,7 @@ namespace ProductManagementAPI.Controllers
                         return BadRequest(new ApiResponse<ProductDto>
                         {
                             Success = false,
-                            Message = "Invalid image file. Please upload a valid image (JPG, PNG, GIF, WEBP) under 5MB."
+                            Message = "Invalid image file. Please upload a valid image (JPG, PNG, GIF, WEBP) under 100MB."
                         });
                     }
 
