@@ -11,7 +11,7 @@ namespace ProductManagementAPI.Services
     {
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly string[] _allowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-        private readonly long _maxFileSize = 5 * 1024 * 1024;
+        private readonly long _maxFileSize = 100 * 1024 * 1024;
 
         public FileService(IWebHostEnvironment webHostEnvironment)
         {
