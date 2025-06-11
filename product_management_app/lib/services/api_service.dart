@@ -1,8 +1,13 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../models/product_model.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:7116/api';
+  static const String _localUrl = 'http://localhost:7116/api';
+  static const String _emulatorUrl = 'http://10.0.2.2:7116/api';
+  static String get baseUrl =>
+      kIsWeb ? _localUrl : (Platform.isAndroid ? _emulatorUrl : _localUrl);
   late Dio _dio;
 
   ApiService() {
@@ -11,19 +16,17 @@ class ApiService {
         baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
-        headers: {'Content-Type': 'application/json'},
       ),
     );
 
     _dio.interceptors.add(
-      LogInterceptor(requestBody: true, responseBody: true),
+      LogInterceptor(requestBody: true, responseBody: true, error: true),
     );
   }
 
   Future<ApiResponse<List<Product>>> getProducts() async {
     try {
       final response = await _dio.get('/products');
-
       if (response.statusCode == 200) {
         final apiResponse = ApiResponse<List<Product>>.fromJson(
           response.data,
@@ -66,7 +69,19 @@ class ApiService {
     CreateProductRequest request,
   ) async {
     try {
-      final response = await _dio.post('/products', data: request.toJson());
+      final data = await request.toJson();
+      final formData = FormData.fromMap(data);
+      print('Sending FormData: ${formData.fields}'); // Log fields
+      if (data.containsKey('image')) {
+        print(
+          'Image filename: ${(data['image'] as MultipartFile).filename}',
+        ); // Log image
+      }
+      final response = await _dio.post(
+        '/products',
+        data: formData,
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+      );
 
       if (response.statusCode == 201) {
         final apiResponse = ApiResponse<Product>.fromJson(
@@ -78,6 +93,16 @@ class ApiService {
         throw Exception('Lỗi máy chủ: Mã trạng thái ${response.statusCode}');
       }
     } on DioException catch (e) {
+      if (e.response?.data != null) {
+        final errorResponse = ApiResponse<Product>.fromJson(
+          e.response!.data,
+          (data) => Product.fromJson(data),
+        );
+        print('Server error: ${errorResponse.message}'); // Log error
+        throw Exception(
+          'Lỗi: ${errorResponse.message}${errorResponse.errors != null ? ' - ${errorResponse.errors!.join(', ')}' : ''}',
+        );
+      }
       throw Exception('Lỗi mạng: ${e.message}');
     }
   }
@@ -87,7 +112,19 @@ class ApiService {
     CreateProductRequest request,
   ) async {
     try {
-      final response = await _dio.put('/products/$id', data: request.toJson());
+      final data = await request.toJson();
+      final formData = FormData.fromMap(data);
+      print('Sending FormData: ${formData.fields}'); // Log fields
+      if (data.containsKey('image')) {
+        print(
+          'Image filename: ${(data['image'] as MultipartFile).filename}',
+        ); // Log image
+      }
+      final response = await _dio.put(
+        '/products/$id',
+        data: formData,
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+      );
 
       if (response.statusCode == 200) {
         final apiResponse = ApiResponse<Product>.fromJson(
@@ -99,6 +136,16 @@ class ApiService {
         throw Exception('Lỗi máy chủ: Mã trạng thái ${response.statusCode}');
       }
     } on DioException catch (e) {
+      if (e.response?.data != null) {
+        final errorResponse = ApiResponse<Product>.fromJson(
+          e.response!.data,
+          (data) => Product.fromJson(data),
+        );
+        print('Server error: ${errorResponse.message}'); // Log error
+        throw Exception(
+          'Lỗi: ${errorResponse.message}${errorResponse.errors != null ? ' - ${errorResponse.errors!.join(', ')}' : ''}',
+        );
+      }
       throw Exception('Lỗi mạng: ${e.message}');
     }
   }

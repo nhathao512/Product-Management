@@ -1,4 +1,4 @@
-﻿namespace ProductManagementAPI.Services
+namespace ProductManagementAPI.Services
 {
     public interface IFileService
     {

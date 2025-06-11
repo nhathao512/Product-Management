@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProductManagementAPI.Data;
 using ProductManagementAPI.Services;
 using Swashbuckle.AspNetCore.SwaggerUI;

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProductManagementAPI.Models;
 
 namespace ProductManagementAPI.Data
@@ -44,43 +44,6 @@ namespace ProductManagementAPI.Data
                 entity.HasCheckConstraint("CK_Product_Price", "[Price] > 0");
                 entity.HasCheckConstraint("CK_Product_Stock", "[Stock] >= 0");
             });
-
-            // Seed data with explicit DateTime values
-            modelBuilder.Entity<Product>().HasData(
-                new Product
-                {
-                    Id = 1,
-                    Name = "Laptop Dell",
-                    Description = "Laptop Dell Inspiron 15",
-                    Price = 15000000,
-                    Stock = 10,
-                    ImageUrl = null,
-                    CreatedAt = new DateTime(2025, 6, 9, 14, 35, 0),
-                    UpdatedAt = new DateTime(2025, 6, 9, 14, 35, 0)
-                },
-                new Product
-                {
-                    Id = 2,
-                    Name = "iPhone 14",
-                    Description = "Apple iPhone 14 Pro Max",
-                    Price = 25000000,
-                    Stock = 5,
-                    ImageUrl = null,
-                    CreatedAt = new DateTime(2025, 6, 9, 14, 35, 0),
-                    UpdatedAt = new DateTime(2025, 6, 9, 14, 35, 0)
-                },
-                new Product
-                {
-                    Id = 3,
-                    Name = "Samsung Galaxy S23",
-                    Description = "Samsung Galaxy S23 Ultra",
-                    Price = 22000000,
-                    Stock = 8,
-                    ImageUrl = null,
-                    CreatedAt = new DateTime(2025, 6, 9, 14, 35, 0),
-                    UpdatedAt = new DateTime(2025, 6, 9, 14, 35, 0)
-                }
-            );
         }
     }
 }

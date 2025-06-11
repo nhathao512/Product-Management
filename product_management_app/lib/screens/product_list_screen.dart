@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Thêm import
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../models/product_model.dart';
+import '../services/api_service.dart';
 import 'product_form_screen.dart';
+import 'product_detail_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
   @override
@@ -22,14 +25,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Quản lý sản phẩm'),
+        title: const Text('Quản lý sản phẩm'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
       body: Consumer<ProductProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (provider.error.isNotEmpty) {
@@ -37,17 +40,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error, size: 64, color: Colors.red),
-                  SizedBox(height: 16),
+                  const Icon(Icons.error, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
                   Text(
                     'Lỗi: ${provider.error}',
-                    style: TextStyle(color: Colors.red),
+                    style: const TextStyle(color: Colors.red),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => provider.loadProducts(),
-                    child: Text('Thử lại'),
+                    child: const Text('Thử lại'),
                   ),
                 ],
               ),
@@ -55,7 +58,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
           }
 
           if (provider.products.isEmpty) {
-            return Center(
+            return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -83,10 +86,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => ProductFormScreen()),
+            MaterialPageRoute(builder: (context) => const ProductFormScreen()),
           );
         },
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
@@ -104,12 +107,12 @@ class ProductCard extends StatelessWidget {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text('Xác nhận xóa'),
+            title: const Text('Xác nhận xóa'),
             content: Text('Bạn có chắc muốn xóa sản phẩm "${product.name}"?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Hủy'),
+                child: const Text('Hủy'),
               ),
               TextButton(
                 onPressed: () async {
@@ -121,7 +124,7 @@ class ProductCard extends StatelessWidget {
                   Navigator.pop(context);
                   if (success) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Xóa sản phẩm thành công')),
+                      const SnackBar(content: Text('Xóa sản phẩm thành công')),
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -129,7 +132,7 @@ class ProductCard extends StatelessWidget {
                     );
                   }
                 },
-                child: Text('Xóa', style: TextStyle(color: Colors.red)),
+                child: const Text('Xóa', style: TextStyle(color: Colors.red)),
               ),
             ],
           ),
@@ -139,27 +142,57 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.blue,
-          child: Text(
-            product.name[0].toUpperCase(),
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductDetailScreen(product: product),
+            ),
+          );
+        },
+        leading:
+            product.imageUrl != null
+                ? Image.network(
+                  '${ApiService.baseUrl.replaceAll('/api', '')}${product.imageUrl}',
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (context, error, stackTrace) => CircleAvatar(
+                        backgroundColor: Colors.blue,
+                        child: Text(
+                          product.name[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                )
+                : CircleAvatar(
+                  backgroundColor: Colors.blue,
+                  child: Text(
+                    product.name[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
         title: Text(
           product.name,
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(product.description),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
-              'Giá: ${product.price.toStringAsFixed(0)} VNĐ',
-              style: TextStyle(
+              'Giá: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'VNĐ').format(product.price)}',
+              style: const TextStyle(
                 color: Colors.green,
                 fontWeight: FontWeight.bold,
               ),
@@ -170,7 +203,7 @@ class ProductCard extends StatelessWidget {
         trailing: PopupMenuButton(
           itemBuilder:
               (context) => [
-                PopupMenuItem(
+                const PopupMenuItem(
                   value: 'edit',
                   child: Row(
                     children: [
@@ -180,7 +213,7 @@ class ProductCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                PopupMenuItem(
+                const PopupMenuItem(
                   value: 'delete',
                   child: Row(
                     children: [
