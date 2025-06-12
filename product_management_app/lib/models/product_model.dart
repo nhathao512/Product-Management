@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:mime/mime.dart';
 
 class Product {
   final int id;
@@ -63,19 +64,40 @@ class CreateProductRequest {
   });
 
   Future<Map<String, dynamic>> toJson() async {
-    final map = {
+    final map = <String, dynamic>{
       'name': name,
       'description': description,
       'price': price,
-      'stock':
-          stock.toString(), // Đảm bảo stock là chuỗi để phù hợp với FormData
+      'stock': stock,
     };
 
     if (image != null) {
+      // Lấy MIME type từ file
+      String? mimeType = lookupMimeType(image!.path);
+
+      // Fallback nếu không detect được MIME type
+      if (mimeType == null) {
+        final extension = image!.path.toLowerCase();
+        if (extension.endsWith('.jpg') || extension.endsWith('.jpeg')) {
+          mimeType = 'image/jpeg';
+        } else if (extension.endsWith('.png')) {
+          mimeType = 'image/png';
+        } else if (extension.endsWith('.gif')) {
+          mimeType = 'image/gif';
+        } else if (extension.endsWith('.webp')) {
+          mimeType = 'image/webp';
+        } else {
+          mimeType = 'image/jpeg'; // Default fallback
+        }
+      }
+
       map['image'] = await MultipartFile.fromFile(
         image!.path,
         filename: image!.path.split('/').last,
+        contentType: DioMediaType.parse(mimeType),
       );
+
+      print('Image MIME type: $mimeType'); // Debug log
     }
 
     return map;

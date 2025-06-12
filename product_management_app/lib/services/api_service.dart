@@ -71,16 +71,24 @@ class ApiService {
     try {
       final data = await request.toJson();
       final formData = FormData.fromMap(data);
+
       print('Sending FormData: ${formData.fields}'); // Log fields
       if (data.containsKey('image')) {
-        print(
-          'Image filename: ${(data['image'] as MultipartFile).filename}',
-        ); // Log image
+        final imageFile = data['image'] as MultipartFile;
+        print('Image filename: ${imageFile.filename}');
+        print('Image contentType: ${imageFile.contentType}');
+        print('Image length: ${imageFile.length}');
       }
+
       final response = await _dio.post(
         '/products',
         data: formData,
-        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+        options: Options(
+          headers: {
+            // Không set Content-Type manually, để Dio tự động set
+            // 'Content-Type': 'multipart/form-data',
+          },
+        ),
       );
 
       if (response.statusCode == 201) {
@@ -114,16 +122,23 @@ class ApiService {
     try {
       final data = await request.toJson();
       final formData = FormData.fromMap(data);
-      print('Sending FormData: ${formData.fields}'); // Log fields
+
       if (data.containsKey('image')) {
-        print(
-          'Image filename: ${(data['image'] as MultipartFile).filename}',
-        ); // Log image
+        final imageFile = data['image'] as MultipartFile;
+        print('Update - Image filename: ${imageFile.filename}');
+        print('Update - Image contentType: ${imageFile.contentType}');
+        print('Update - Image length: ${imageFile.length}');
       }
+
       final response = await _dio.put(
         '/products/$id',
         data: formData,
-        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+        options: Options(
+          headers: {
+            // Không set Content-Type manually, để Dio tự động set
+            // 'Content-Type': 'multipart/form-data',
+          },
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -141,7 +156,6 @@ class ApiService {
           e.response!.data,
           (data) => Product.fromJson(data),
         );
-        print('Server error: ${errorResponse.message}'); // Log error
         throw Exception(
           'Lỗi: ${errorResponse.message}${errorResponse.errors != null ? ' - ${errorResponse.errors!.join(', ')}' : ''}',
         );

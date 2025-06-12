@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Thêm import
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../models/product_model.dart';
@@ -156,8 +156,8 @@ class ProductCard extends StatelessWidget {
             product.imageUrl != null
                 ? Image.network(
                   '${ApiService.baseUrl.replaceAll('/api', '')}${product.imageUrl}',
-                  width: 50,
-                  height: 50,
+                  width: 60, // Tăng kích thước hình ảnh
+                  height: 60,
                   fit: BoxFit.cover,
                   errorBuilder:
                       (context, error, stackTrace) => CircleAvatar(

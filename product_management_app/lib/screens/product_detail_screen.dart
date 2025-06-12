@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Thêm import
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/product_model.dart';
 import '../providers/product_provider.dart';
@@ -31,9 +31,9 @@ class ProductDetailScreen extends StatelessWidget {
                     listen: false,
                   );
                   final success = await provider.deleteProduct(product.id);
-                  Navigator.pop(context); // Đóng dialog
+                  Navigator.pop(context);
                   if (success) {
-                    Navigator.pop(context); // Quay lại ProductListScreen
+                    Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Xóa sản phẩm thành công')),
                     );
@@ -81,9 +81,8 @@ class ProductDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Hiển thị ảnh sản phẩm
               Container(
-                height: 200,
+                height: 400,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey),
@@ -112,7 +111,6 @@ class ProductDetailScreen extends StatelessWidget {
                         ),
               ),
               const SizedBox(height: 16),
-              // Tên sản phẩm
               Text(
                 product.name,
                 style: const TextStyle(
@@ -121,10 +119,8 @@ class ProductDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              // Mô tả
               Text(product.description, style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 16),
-              // Giá
               Text(
                 'Giá: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'VNĐ').format(product.price)}',
                 style: const TextStyle(
@@ -134,19 +130,16 @@ class ProductDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              // Tồn kho
               Text(
                 'Tồn kho: ${product.stock}',
                 style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 8),
-              // Ngày tạo
               Text(
                 'Ngày tạo: ${product.createdAt.toLocal().toString().split('.')[0]}',
                 style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 8),
-              // Ngày cập nhật
               Text(
                 'Cập nhật lần cuối: ${product.updatedAt.toLocal().toString().split('.')[0]}',
                 style: const TextStyle(fontSize: 14, color: Colors.grey),

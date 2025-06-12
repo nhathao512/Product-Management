@@ -54,12 +54,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
     if (pickedFile != null) {
       File imageFile = File(pickedFile.path);
-      final imageSize = await imageFile.length(); // Kích thước tệp (byte)
-      const maxSize = 100 * 1024 * 1024; // 100MB
+      final imageSize = await imageFile.length();
+      const maxSize = 100 * 1024 * 1024;
       String extension = path.extension(pickedFile.path).toLowerCase();
       const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
 
-      // Kiểm tra định dạng
       if (!validExtensions.contains(extension)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -71,7 +70,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         return;
       }
 
-      // Kiểm tra kích thước
       if (imageSize > maxSize) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -81,7 +79,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         return;
       }
 
-      // Kiểm tra loại MIME (tùy chọn, để đảm bảo tệp là ảnh)
       final mimeType = await _getMimeType(imageFile);
       if (!mimeType.startsWith('image/')) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -100,7 +97,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
   }
 
-  // Hàm lấy MIME type (tùy chọn)
   Future<String> _getMimeType(File file) async {
     final bytes = await file.readAsBytes();
     if (bytes.length < 8) return 'application/octet-stream';
@@ -136,7 +132,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       }
 
       if (success) {
-        Navigator.pop(context);
+        // Không cần gọi loadProducts() vì Provider đã tự động cập nhật
+        Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(

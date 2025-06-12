@@ -50,6 +50,7 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
+
   Future<bool> updateProduct(int id, CreateProductRequest request) async {
     try {
       final response = await _apiService.updateProduct(id, request);
