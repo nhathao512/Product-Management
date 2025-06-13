@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../models/product_model.dart';
-import '../services/api_service.dart';
+import '../../data/models/product_model.dart';
+import '../../data/services/api_service.dart';
 
 class ProductProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
-
   List<Product> _products = [];
   bool _isLoading = false;
   String _error = '';
@@ -17,7 +16,6 @@ class ProductProvider extends ChangeNotifier {
     _isLoading = true;
     _error = '';
     notifyListeners();
-
     try {
       final response = await _apiService.getProducts();
       if (response.success && response.data != null) {
@@ -49,7 +47,6 @@ class ProductProvider extends ChangeNotifier {
       return false;
     }
   }
-
 
   Future<bool> updateProduct(int id, CreateProductRequest request) async {
     try {
