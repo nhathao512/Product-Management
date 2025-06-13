@@ -157,7 +157,28 @@ class _ProductFormScreenState extends State<ProductFormScreen>
       }
       setState(() => _isSubmitting = false);
       _submitAnimationController.reset();
-      Navigator.pop(context, {'success': success, 'message': message});
+
+      if (success && widget.product != null) {
+        Navigator.popUntil(context, (route) => route.isFirst);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(message),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      } else {
+        Navigator.pop(context, {'success': success, 'message': message});
+      }
     }
   }
 
