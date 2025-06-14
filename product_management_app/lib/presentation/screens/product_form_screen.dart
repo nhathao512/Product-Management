@@ -215,6 +215,13 @@ class _ProductFormScreenState extends State<ProductFormScreen>
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitForm,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                   child:
                       _isSubmitting
                           ? const Row(
@@ -241,6 +248,7 @@ class _ProductFormScreenState extends State<ProductFormScreen>
                                 widget.product == null
                                     ? Icons.add
                                     : Icons.update,
+                                color: Colors.white,
                               ),
                               const SizedBox(width: 8),
                               Text(
