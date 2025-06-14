@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ProductManagementAPI.Data;
 using ProductManagementAPI.DTOs;
 using ProductManagementAPI.Models;
+using ProductManagementAPI.Repositories;
 using ProductManagementAPI.Services;
 using System.Data.SqlClient;
 
@@ -12,13 +12,13 @@ namespace ProductManagementAPI.Controllers
     [Route("api/[controller]")]
     public class ProductsController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IFileService _fileService;
         private readonly ILogger<ProductsController> _logger;
 
-        public ProductsController(ApplicationDbContext context, IFileService fileService, ILogger<ProductsController> logger)
+        public ProductsController(IUnitOfWork unitOfWork, IFileService fileService, ILogger<ProductsController> logger)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
             _fileService = fileService;
             _logger = logger;
         }
@@ -29,24 +29,23 @@ namespace ProductManagementAPI.Controllers
         {
             try
             {
-                var products = await _context.Products
-                    .Select(p => new ProductDto
-                    {
-                        Id = p.Id,
-                        Name = p.Name,
-                        Description = p.Description,
-                        Price = p.Price,
-                        Stock = p.Stock,
-                        ImageUrl = p.ImageUrl,
-                        CreatedAt = p.CreatedAt,
-                        UpdatedAt = p.UpdatedAt
-                    })
-                    .ToListAsync();
+                var products = await _unitOfWork.Products.GetAllAsync();
+                var productDtos = products.Select(p => new ProductDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Price = p.Price,
+                    Stock = p.Stock,
+                    ImageUrl = p.ImageUrl,
+                    CreatedAt = p.CreatedAt,
+                    UpdatedAt = p.UpdatedAt
+                }).ToList();
 
                 return Ok(new ApiResponse<List<ProductDto>>
                 {
                     Success = true,
-                    Data = products,
+                    Data = productDtos,
                     Message = "Products retrieved successfully"
                 });
             }
@@ -68,7 +67,7 @@ namespace ProductManagementAPI.Controllers
         {
             try
             {
-                var product = await _context.Products.FindAsync(id);
+                var product = await _unitOfWork.Products.GetByIdAsync(id);
 
                 if (product == null)
                 {
@@ -116,7 +115,6 @@ namespace ProductManagementAPI.Controllers
         {
             try
             {
-                // Validate ModelState
                 if (!ModelState.IsValid)
                 {
                     var errors = ModelState.Values
@@ -132,7 +130,6 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                // Validate and clean input data
                 var trimmedName = createProductDto.Name?.Trim();
                 var trimmedDescription = createProductDto.Description?.Trim();
 
@@ -165,7 +162,6 @@ namespace ProductManagementAPI.Controllers
 
                 string? imageUrl = null;
 
-                // Handle image upload
                 if (createProductDto.Image != null)
                 {
                     if (!_fileService.IsValidImageFile(createProductDto.Image))
@@ -193,7 +189,6 @@ namespace ProductManagementAPI.Controllers
                     }
                 }
 
-                // Create product entity
                 var product = new Product
                 {
                     Name = trimmedName,
@@ -205,8 +200,8 @@ namespace ProductManagementAPI.Controllers
                     UpdatedAt = DateTime.Now
                 };
 
-                _context.Products.Add(product);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Products.AddAsync(product);
+                await _unitOfWork.SaveChangesAsync();
 
                 var productDto = new ProductDto
                 {
@@ -313,7 +308,7 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                var product = await _context.Products.FindAsync(id);
+                var product = await _unitOfWork.Products.GetByIdAsync(id);
                 if (product == null)
                 {
                     return NotFound(new ApiResponse<ProductDto>
@@ -323,7 +318,6 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                // Validate and clean input data
                 var trimmedName = updateProductDto.Name?.Trim();
                 var trimmedDescription = updateProductDto.Description?.Trim();
 
@@ -354,7 +348,6 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                // Handle image upload
                 if (updateProductDto.Image != null)
                 {
                     if (!_fileService.IsValidImageFile(updateProductDto.Image))
@@ -368,13 +361,11 @@ namespace ProductManagementAPI.Controllers
 
                     try
                     {
-                        // Delete old image if exists
                         if (!string.IsNullOrEmpty(product.ImageUrl))
                         {
                             _fileService.DeleteFile(product.ImageUrl);
                         }
 
-                        // Upload new image
                         product.ImageUrl = await _fileService.SaveFileAsync(updateProductDto.Image, "products");
                     }
                     catch (Exception ex)
@@ -389,14 +380,14 @@ namespace ProductManagementAPI.Controllers
                     }
                 }
 
-                // Update product properties
                 product.Name = trimmedName;
                 product.Description = trimmedDescription ?? string.Empty;
                 product.Price = updateProductDto.Price;
                 product.Stock = updateProductDto.Stock;
                 product.UpdatedAt = DateTime.Now;
 
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Products.UpdateAsync(product);
+                await _unitOfWork.SaveChangesAsync();
 
                 var productDto = new ProductDto
                 {
@@ -419,7 +410,8 @@ namespace ProductManagementAPI.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!ProductExists(id))
+                var exists = await _unitOfWork.Products.GetByIdAsync(id) != null;
+                if (!exists)
                 {
                     return NotFound(new ApiResponse<ProductDto>
                     {
@@ -502,7 +494,7 @@ namespace ProductManagementAPI.Controllers
         {
             try
             {
-                var product = await _context.Products.FindAsync(id);
+                var product = await _unitOfWork.Products.GetByIdAsync(id);
                 if (product == null)
                 {
                     return NotFound(new ApiResponse<object>
@@ -512,14 +504,13 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                // Delete image if exists
                 if (!string.IsNullOrEmpty(product.ImageUrl))
                 {
                     _fileService.DeleteFile(product.ImageUrl);
                 }
 
-                _context.Products.Remove(product);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Products.DeleteAsync(product);
+                await _unitOfWork.SaveChangesAsync();
 
                 return Ok(new ApiResponse<object>
                 {
@@ -537,11 +528,6 @@ namespace ProductManagementAPI.Controllers
                     Errors = new[] { ex.Message }
                 });
             }
-        }
-
-        private bool ProductExists(int id)
-        {
-            return _context.Products.Any(e => e.Id == id);
         }
     }
 }
