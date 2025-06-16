@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../data/models/product_model.dart';
 import '../../data/services/api_service.dart';
+import '../../data/services/auth_service.dart';
 
 class ProductProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
+  final AuthService _authService = AuthService();
   List<Product> _products = [];
   bool _isLoading = false;
   String _error = '';
@@ -17,7 +19,14 @@ class ProductProvider extends ChangeNotifier {
     _error = '';
     notifyListeners();
     try {
-      final response = await _apiService.getProducts();
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) {
+        _error = 'Không có token xác thực';
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+      final response = await _apiService.getProducts(token: token);
       if (response.success && response.data != null) {
         _products = response.data!;
       } else {
@@ -33,7 +42,13 @@ class ProductProvider extends ChangeNotifier {
 
   Future<bool> createProduct(CreateProductRequest request) async {
     try {
-      final response = await _apiService.createProduct(request);
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) {
+        _error = 'Không có token xác thực';
+        notifyListeners();
+        return false;
+      }
+      final response = await _apiService.createProduct(request, token: token);
       if (response.success && response.data != null) {
         _products.add(response.data!);
         notifyListeners();
@@ -50,7 +65,17 @@ class ProductProvider extends ChangeNotifier {
 
   Future<bool> updateProduct(int id, CreateProductRequest request) async {
     try {
-      final response = await _apiService.updateProduct(id, request);
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) {
+        _error = 'Không có token xác thực';
+        notifyListeners();
+        return false;
+      }
+      final response = await _apiService.updateProduct(
+        id,
+        request,
+        token: token,
+      );
       if (response.success && response.data != null) {
         final index = _products.indexWhere((p) => p.id == id);
         if (index != -1) {
@@ -70,7 +95,13 @@ class ProductProvider extends ChangeNotifier {
 
   Future<bool> deleteProduct(int id) async {
     try {
-      final response = await _apiService.deleteProduct(id);
+      final token = await _authService.getToken();
+      if (token == null || token.isEmpty) {
+        _error = 'Không có token xác thực';
+        notifyListeners();
+        return false;
+      }
+      final response = await _apiService.deleteProduct(id, token: token);
       if (response.success) {
         _products.removeWhere((p) => p.id == id);
         notifyListeners();

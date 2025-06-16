@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/state/loading_widget.dart';
 import '../widgets/state/error_widget.dart' as custom_widgets;
 import '../widgets/state/empty_widget.dart';
@@ -95,6 +96,20 @@ class _ProductListScreenState extends State<ProductListScreen>
             ),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              final authProvider = Provider.of<AuthProvider>(
+                context,
+                listen: false,
+              );
+              await authProvider.logout();
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+            tooltip: 'Đăng xuất',
+          ),
+        ],
       ),
       body: Consumer<ProductProvider>(
         builder: (context, provider, child) {

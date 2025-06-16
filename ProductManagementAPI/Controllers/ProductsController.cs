@@ -1,14 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProductManagementAPI.DTOs;
 using ProductManagementAPI.Models;
 using ProductManagementAPI.Repositories;
 using ProductManagementAPI.Services;
-using System.Data.SqlClient;
 
 namespace ProductManagementAPI.Controllers
 {
-    [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class ProductsController : ControllerBase
     {
@@ -29,8 +29,8 @@ namespace ProductManagementAPI.Controllers
         {
             try
             {
-                var products = await _unitOfWork.Products.GetAllAsync();
-                var productDtos = products.Select(p => new ProductDto
+                var products = await _unitOfWork?.Products.GetAllAsync();
+                var productDtos = products?.Select(p => new ProductDto
                 {
                     Id = p.Id,
                     Name = p.Name,
@@ -51,7 +51,7 @@ namespace ProductManagementAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving products");
+                _logger?.LogError(ex, "Error retrieving products");
                 return StatusCode(500, new ApiResponse<List<ProductDto>>
                 {
                     Success = false,
@@ -67,7 +67,7 @@ namespace ProductManagementAPI.Controllers
         {
             try
             {
-                var product = await _unitOfWork.Products.GetByIdAsync(id);
+                var product = await _unitOfWork?.Products.GetByIdAsync(id);
 
                 if (product == null)
                 {
@@ -99,7 +99,7 @@ namespace ProductManagementAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving product {ProductId}", id);
+                _logger?.LogError(ex, "Error retrieving product {ProductId}", id);
                 return StatusCode(500, new ApiResponse<ProductDto>
                 {
                     Success = false,
@@ -117,7 +117,7 @@ namespace ProductManagementAPI.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    var errors = ModelState.Values
+                    var errors = ModelState?.Values
                         .SelectMany(v => v.Errors)
                         .Select(e => e.ErrorMessage)
                         .ToArray();
@@ -130,10 +130,10 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                var trimmedName = createProductDto.Name?.Trim();
-                var trimmedDescription = createProductDto.Description?.Trim();
+                var trimmedName = createProductDto?.Name?.Trim();
+                var trimmedDescription = createProductDto?.Description?.Trim();
 
-                if (string.IsNullOrEmpty(trimmedName))
+                if (string.IsNullOrWhiteSpace(trimmedName))
                 {
                     return BadRequest(new ApiResponse<ProductDto>
                     {
@@ -142,7 +142,7 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                if (createProductDto.Price <= 0)
+                if (createProductDto?.Price <= 0)
                 {
                     return BadRequest(new ApiResponse<ProductDto>
                     {
@@ -151,7 +151,7 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                if (createProductDto.Stock < 0)
+                if (createProductDto?.Stock < 0)
                 {
                     return BadRequest(new ApiResponse<ProductDto>
                     {
@@ -162,24 +162,24 @@ namespace ProductManagementAPI.Controllers
 
                 string? imageUrl = null;
 
-                if (createProductDto.Image != null)
+                if (createProductDto?.Image != null)
                 {
                     if (!_fileService.IsValidImageFile(createProductDto.Image))
                     {
                         return BadRequest(new ApiResponse<ProductDto>
                         {
                             Success = false,
-                            Message = "Invalid image file. Please upload a valid image (JPG, PNG, GIF, WEBP) under 100MB."
+                            Message = "Invalid image file. Please upload a valid image (JPG, PNG, JPEG, WEBP) under 100MB."
                         });
                     }
 
                     try
                     {
-                        imageUrl = await _fileService.SaveFileAsync(createProductDto.Image, "products");
+                        imageUrl = await _fileService?.SaveFileAsync(createProductDto.Image, "products");
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to upload image for product creation");
+                        _logger?.LogError(ex, "Failed to upload image for product creation");
                         return StatusCode(500, new ApiResponse<ProductDto>
                         {
                             Success = false,
@@ -200,8 +200,8 @@ namespace ProductManagementAPI.Controllers
                     UpdatedAt = DateTime.Now
                 };
 
-                await _unitOfWork.Products.AddAsync(product);
-                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork?.Products.AddAsync(product);
+                await _unitOfWork?.SaveChangesAsync();
 
                 var productDto = new ProductDto
                 {
@@ -224,12 +224,12 @@ namespace ProductManagementAPI.Controllers
             }
             catch (DbUpdateException dbEx)
             {
-                _logger.LogError(dbEx, "Database update error while creating product");
+                _logger?.LogError(dbEx, "Database update error while creating product");
 
                 var errorMessage = "Failed to create product.";
                 var errors = new List<string>();
 
-                if (dbEx.InnerException != null)
+                if (dbEx?.InnerException != null)
                 {
                     var innerMessage = dbEx.InnerException.Message.ToLower();
 
@@ -277,7 +277,7 @@ namespace ProductManagementAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error while creating product");
+                _logger?.LogError(ex, "Unexpected error while creating product");
                 return StatusCode(500, new ApiResponse<ProductDto>
                 {
                     Success = false,
@@ -295,7 +295,7 @@ namespace ProductManagementAPI.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    var errors = ModelState.Values
+                    var errors = ModelState?.Values
                         .SelectMany(v => v.Errors)
                         .Select(e => e.ErrorMessage)
                         .ToArray();
@@ -308,7 +308,7 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                var product = await _unitOfWork.Products.GetByIdAsync(id);
+                var product = await _unitOfWork?.Products.GetByIdAsync(id);
                 if (product == null)
                 {
                     return NotFound(new ApiResponse<ProductDto>
@@ -318,10 +318,10 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                var trimmedName = updateProductDto.Name?.Trim();
-                var trimmedDescription = updateProductDto.Description?.Trim();
+                var trimmedName = updateProductDto?.Name?.Trim();
+                var trimmedDescription = updateProductDto?.Description?.Trim();
 
-                if (string.IsNullOrEmpty(trimmedName))
+                if (string.IsNullOrWhiteSpace(trimmedName))
                 {
                     return BadRequest(new ApiResponse<ProductDto>
                     {
@@ -330,7 +330,7 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                if (updateProductDto.Price <= 0)
+                if (updateProductDto?.Price <= 0)
                 {
                     return BadRequest(new ApiResponse<ProductDto>
                     {
@@ -339,7 +339,7 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                if (updateProductDto.Stock < 0)
+                if (updateProductDto?.Stock < 0)
                 {
                     return BadRequest(new ApiResponse<ProductDto>
                     {
@@ -348,29 +348,29 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                if (updateProductDto.Image != null)
+                if (updateProductDto?.Image != null)
                 {
                     if (!_fileService.IsValidImageFile(updateProductDto.Image))
                     {
                         return BadRequest(new ApiResponse<ProductDto>
                         {
                             Success = false,
-                            Message = "Invalid image file. Please upload a valid image (JPG, PNG, GIF, WEBP) under 5MB."
+                            Message = "Invalid image file. Please upload a valid image (JPG, PNG, JPEG, WEBP) under 5MB."
                         });
                     }
 
                     try
                     {
-                        if (!string.IsNullOrEmpty(product.ImageUrl))
+                        if (!string.IsNullOrWhiteSpace(product.ImageUrl))
                         {
-                            _fileService.DeleteFile(product.ImageUrl);
+                            _fileService?.DeleteFile(product.ImageUrl);
                         }
 
-                        product.ImageUrl = await _fileService.SaveFileAsync(updateProductDto.Image, "products");
+                        product.ImageUrl = await _fileService?.SaveFileAsync(updateProductDto.Image, "products");
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to upload image for product update");
+                        _logger?.LogError(ex, "Failed to upload image for product update");
                         return StatusCode(500, new ApiResponse<ProductDto>
                         {
                             Success = false,
@@ -386,8 +386,8 @@ namespace ProductManagementAPI.Controllers
                 product.Stock = updateProductDto.Stock;
                 product.UpdatedAt = DateTime.Now;
 
-                await _unitOfWork.Products.UpdateAsync(product);
-                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork?.Products.UpdateAsync(product);
+                await _unitOfWork?.SaveChangesAsync();
 
                 var productDto = new ProductDto
                 {
@@ -410,7 +410,7 @@ namespace ProductManagementAPI.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                var exists = await _unitOfWork.Products.GetByIdAsync(id) != null;
+                var exists = await _unitOfWork?.Products.GetByIdAsync(id) != null;
                 if (!exists)
                 {
                     return NotFound(new ApiResponse<ProductDto>
@@ -430,12 +430,12 @@ namespace ProductManagementAPI.Controllers
             }
             catch (DbUpdateException dbEx)
             {
-                _logger.LogError(dbEx, "Database update error while updating product {ProductId}", id);
+                _logger?.LogError(dbEx, "Database update error while updating product {ProductId}", id);
 
                 var errorMessage = "Failed to update product.";
                 var errors = new List<string>();
 
-                if (dbEx.InnerException != null)
+                if (dbEx?.InnerException != null)
                 {
                     var innerMessage = dbEx.InnerException.Message.ToLower();
 
@@ -478,7 +478,7 @@ namespace ProductManagementAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error while updating product {ProductId}", id);
+                _logger?.LogError(ex, "Unexpected error while updating product {ProductId}", id);
                 return StatusCode(500, new ApiResponse<ProductDto>
                 {
                     Success = false,
@@ -494,7 +494,7 @@ namespace ProductManagementAPI.Controllers
         {
             try
             {
-                var product = await _unitOfWork.Products.GetByIdAsync(id);
+                var product = await _unitOfWork?.Products.GetByIdAsync(id);
                 if (product == null)
                 {
                     return NotFound(new ApiResponse<object>
@@ -504,13 +504,13 @@ namespace ProductManagementAPI.Controllers
                     });
                 }
 
-                if (!string.IsNullOrEmpty(product.ImageUrl))
+                if (!string.IsNullOrWhiteSpace(product.ImageUrl))
                 {
-                    _fileService.DeleteFile(product.ImageUrl);
+                    _fileService?.DeleteFile(product.ImageUrl);
                 }
 
-                await _unitOfWork.Products.DeleteAsync(product);
-                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork?.Products.DeleteAsync(product);
+                await _unitOfWork?.SaveChangesAsync();
 
                 return Ok(new ApiResponse<object>
                 {
@@ -520,7 +520,7 @@ namespace ProductManagementAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting product {ProductId}", id);
+                _logger?.LogError(ex, "Error deleting product {ProductId}", id);
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,
