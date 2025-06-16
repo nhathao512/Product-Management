@@ -8,7 +8,6 @@ import '../../core/constants/api_constants.dart';
 class ApiService {
   late Dio _dio;
 
-  // Thêm getter tĩnh để lấy baseUrl
   static String get baseUrl {
     return kIsWeb
         ? ApiConstants.baseUrlLocal
@@ -18,13 +17,6 @@ class ApiService {
   }
 
   ApiService() {
-    String baseUrl =
-        kIsWeb
-            ? ApiConstants.baseUrlLocal
-            : (Platform.isAndroid
-                ? ApiConstants.baseUrlEmulator
-                : ApiConstants.baseUrlLocal);
-
     _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
@@ -37,9 +29,13 @@ class ApiService {
     );
   }
 
-  Future<ApiResponse<List<Product>>> getProducts() async {
+  Future<ApiResponse<List<Product>>> getProducts({String? token}) async {
     try {
-      final response = await _dio.get('/products');
+      Dio newDio = _dio; // Tạo một instance mới để thêm token
+      if (token != null && token.isNotEmpty) {
+        newDio.options.headers['Authorization'] = 'Bearer $token';
+      }
+      final response = await newDio.get('/products');
       if (response.statusCode == 200) {
         return ApiResponse<List<Product>>.fromJson(
           response.data,
@@ -47,48 +43,68 @@ class ApiService {
               (data as List).map((item) => Product.fromJson(item)).toList(),
         );
       } else {
-        throw Exception('Lỗi máy chủ: Mã trạng thái ${response.statusCode}');
+        return ApiResponse<List<Product>>(
+          success: false,
+          message: 'Lỗi máy chủ: Mã trạng thái ${response.statusCode}',
+          data: null,
+        );
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionError) {
-        throw Exception(
-          'Lỗi mạng: Không thể kết nối đến máy chủ. Vui lòng kiểm tra IP/cổng.',
+        return ApiResponse<List<Product>>(
+          success: false,
+          message: 'Lỗi mạng: Không thể kết nối đến máy chủ.',
+          data: null,
         );
       }
-      throw Exception('Lỗi mạng: ${e.message}');
+      return ApiResponse<List<Product>>(
+        success: false,
+        message: 'Lỗi mạng: ${e.message}',
+        data: null,
+      );
     }
   }
 
-  Future<ApiResponse<Product>> getProduct(int id) async {
+  Future<ApiResponse<Product>> getProduct(int id, {String? token}) async {
     try {
-      final response = await _dio.get('/products/$id');
+      Dio newDio = _dio;
+      if (token != null && token.isNotEmpty) {
+        newDio.options.headers['Authorization'] = 'Bearer $token';
+      }
+      final response = await newDio.get('/products/$id');
       if (response.statusCode == 200) {
         return ApiResponse<Product>.fromJson(
           response.data,
           (data) => Product.fromJson(data),
         );
       } else {
-        throw Exception('Lỗi máy chủ: Mã trạng thái ${response.statusCode}');
+        return ApiResponse<Product>(
+          success: false,
+          message: 'Lỗi máy chủ: Mã trạng thái ${response.statusCode}',
+          data: null,
+        );
       }
     } on DioException catch (e) {
-      throw Exception('Lỗi mạng: ${e.message}');
+      return ApiResponse<Product>(
+        success: false,
+        message: 'Lỗi mạng: ${e.message}',
+        data: null,
+      );
     }
   }
 
   Future<ApiResponse<Product>> createProduct(
-    CreateProductRequest request,
-  ) async {
+    CreateProductRequest request, {
+    String? token,
+  }) async {
     try {
+      Dio newDio = _dio;
+      if (token != null && token.isNotEmpty) {
+        newDio.options.headers['Authorization'] = 'Bearer $token';
+      }
       final data = await request.toJson();
       final formData = FormData.fromMap(data);
-      print('Sending FormData: ${formData.fields}');
-      if (data.containsKey('image')) {
-        final imageFile = data['image'] as MultipartFile;
-        print('Image filename: ${imageFile.filename}');
-        print('Image contentType: ${imageFile.contentType}');
-        print('Image length: ${imageFile.length}');
-      }
-      final response = await _dio.post(
+      final response = await newDio.post(
         '/products',
         data: formData,
         options: Options(headers: {}),
@@ -99,37 +115,40 @@ class ApiService {
           (data) => Product.fromJson(data),
         );
       } else {
-        throw Exception('Lỗi máy chủ: Mã trạng thái ${response.statusCode}');
+        return ApiResponse<Product>(
+          success: false,
+          message: 'Lỗi máy chủ: Mã trạng thái ${response.statusCode}',
+          data: null,
+        );
       }
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        final errorResponse = ApiResponse<Product>.fromJson(
+        return ApiResponse<Product>.fromJson(
           e.response!.data,
           (data) => Product.fromJson(data),
         );
-        print('Server error: ${errorResponse.message}');
-        throw Exception(
-          'Lỗi: ${errorResponse.message}${errorResponse.errors != null ? ' - ${errorResponse.errors!.join(', ')}' : ''}',
-        );
       }
-      throw Exception('Lỗi mạng: ${e.message}');
+      return ApiResponse<Product>(
+        success: false,
+        message: 'Lỗi mạng: ${e.message}',
+        data: null,
+      );
     }
   }
 
   Future<ApiResponse<Product>> updateProduct(
     int id,
-    CreateProductRequest request,
-  ) async {
+    CreateProductRequest request, {
+    String? token,
+  }) async {
     try {
+      Dio newDio = _dio;
+      if (token != null && token.isNotEmpty) {
+        newDio.options.headers['Authorization'] = 'Bearer $token';
+      }
       final data = await request.toJson();
       final formData = FormData.fromMap(data);
-      if (data.containsKey('image')) {
-        final imageFile = data['image'] as MultipartFile;
-        print('Update - Image filename: ${imageFile.filename}');
-        print('Update - Image contentType: ${imageFile.contentType}');
-        print('Update - Image length: ${imageFile.length}');
-      }
-      final response = await _dio.put(
+      final response = await newDio.put(
         '/products/$id',
         data: formData,
         options: Options(headers: {}),
@@ -140,32 +159,49 @@ class ApiService {
           (data) => Product.fromJson(data),
         );
       } else {
-        throw Exception('Lỗi máy chủ: Mã trạng thái ${response.statusCode}');
+        return ApiResponse<Product>(
+          success: false,
+          message: 'Lỗi máy chủ: Mã trạng thái ${response.statusCode}',
+          data: null,
+        );
       }
     } on DioException catch (e) {
       if (e.response?.data != null) {
-        final errorResponse = ApiResponse<Product>.fromJson(
+        return ApiResponse<Product>.fromJson(
           e.response!.data,
           (data) => Product.fromJson(data),
         );
-        throw Exception(
-          'Lỗi: ${errorResponse.message}${errorResponse.errors != null ? ' - ${errorResponse.errors!.join(', ')}' : ''}',
-        );
       }
-      throw Exception('Lỗi mạng: ${e.message}');
+      return ApiResponse<Product>(
+        success: false,
+        message: 'Lỗi mạng: ${e.message}',
+        data: null,
+      );
     }
   }
 
-  Future<ApiResponse<void>> deleteProduct(int id) async {
+  Future<ApiResponse<void>> deleteProduct(int id, {String? token}) async {
     try {
-      final response = await _dio.delete('/products/$id');
+      Dio newDio = _dio;
+      if (token != null && token.isNotEmpty) {
+        newDio.options.headers['Authorization'] = 'Bearer $token';
+      }
+      final response = await newDio.delete('/products/$id');
       if (response.statusCode == 200) {
         return ApiResponse<void>.fromJson(response.data, null);
       } else {
-        throw Exception('Lỗi máy chủ: Mã trạng thái ${response.statusCode}');
+        return ApiResponse<void>(
+          success: false,
+          message: 'Lỗi máy chủ: Mã trạng thái ${response.statusCode}',
+          data: null,
+        );
       }
     } on DioException catch (e) {
-      throw Exception('Lỗi mạng: ${e.message}');
+      return ApiResponse<void>(
+        success: false,
+        message: 'Lỗi mạng: ${e.message}',
+        data: null,
+      );
     }
   }
 }
