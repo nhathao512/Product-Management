@@ -24,7 +24,7 @@ namespace ProductManagementAPI.Controllers
             try
             {
                 var user = await _authService.RegisterAsync(registerDto);
-                if (user != null) // Sửa điều kiện này
+                if (user != null) 
                 {
                     return Ok(new ApiResponse<UserDto>
                     {
