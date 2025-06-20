@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
 
 class EmptyWidget extends StatelessWidget {
   const EmptyWidget({Key? key}) : super(key: key);
