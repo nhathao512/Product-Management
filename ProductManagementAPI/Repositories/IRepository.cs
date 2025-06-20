@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 
 namespace ProductManagementAPI.Repositories
 {
@@ -10,5 +11,6 @@ namespace ProductManagementAPI.Repositories
         Task AddAsync(T entity);
         Task UpdateAsync(T entity);
         Task DeleteAsync(T entity);
+        IQueryable<T> GetQueryable();
     }
 }

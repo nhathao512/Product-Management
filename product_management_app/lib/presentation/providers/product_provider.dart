@@ -1,155 +1,124 @@
-import 'package:flutter/material.dart';
-import '../../data/models/product_model.dart';
-import '../../data/services/api_service.dart';
-import '../../data/services/auth_service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:product_management_app/data/models/product_model.dart';
+import 'package:product_management_app/presentation/repositories/product_repository.dart';
 
 class ProductProvider extends ChangeNotifier {
-  final ApiService _apiService = ApiService();
-  final AuthService _authService = AuthService();
+  final ProductRepository _repository;
 
   List<Product> _products = [];
-  List<Product> _filteredProducts = [];
   bool _isLoading = false;
   String _error = '';
   String _searchQuery = '';
+  String? _sortBy;
+  String? _sortOrder;
+  bool? _inStock;
+  int _page = 1;
+  int _limit = 20;
 
-  List<Product> get products =>
-      _searchQuery.isEmpty ? _products : _filteredProducts;
+  ProductProvider({ProductRepository? repository})
+    : _repository = repository ?? ProductRepository();
+
+  List<Product> get products => _products;
   bool get isLoading => _isLoading;
   String get error => _error;
-  String get searchQuery => _searchQuery;
 
-  Future<void> loadProducts() async {
+  Future<void> loadProducts({
+    String? search,
+    String? sortBy,
+    String? sortOrder,
+    bool? inStock,
+    int? page,
+    int? limit,
+  }) async {
     _isLoading = true;
     _error = '';
     notifyListeners();
 
-    try {
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) {
-        _error = 'Không có token xác thực';
-        _isLoading = false;
-        notifyListeners();
-        return;
-      }
+    final response = await _repository.getProducts(
+      search: search ?? _searchQuery,
+      sortBy: sortBy ?? _sortBy,
+      sortOrder: sortOrder ?? _sortOrder,
+      inStock: inStock ?? _inStock,
+      page: page ?? _page,
+      limit: limit ?? _limit,
+    );
 
-      final response = await _apiService.getProducts(token: token);
-      if (response.success && response.data != null) {
-        _products = response.data!;
-        _filterProducts(); // Filter products after loading
-      } else {
-        _error = response.message;
-      }
-    } catch (e) {
-      _error = 'Lỗi mạng: ${e.toString()}';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  void searchProducts(String query) {
-    _searchQuery = query.toLowerCase().trim();
-    _filterProducts();
-    notifyListeners();
-  }
-
-  void clearSearch() {
-    _searchQuery = '';
-    _filteredProducts.clear();
-    notifyListeners();
-  }
-
-  void _filterProducts() {
-    if (_searchQuery.isEmpty) {
-      _filteredProducts.clear();
+    if (response.success && response.data != null) {
+      _products = response.data!;
+      _searchQuery = search ?? _searchQuery;
+      _sortBy = sortBy ?? _sortBy;
+      _sortOrder = sortOrder ?? _sortOrder;
+      _inStock = inStock ?? _inStock;
+      _page = page ?? _page;
+      _limit = limit ?? _limit;
     } else {
-      _filteredProducts =
-          _products.where((product) {
-            return product.name.toLowerCase().contains(_searchQuery) ||
-                product.description.toLowerCase().contains(_searchQuery) ||
-                product.price.toString().contains(_searchQuery) ||
-                product.stock.toString().contains(_searchQuery);
-          }).toList();
+      _error = response.message;
     }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<bool> createProduct(CreateProductRequest request) async {
-    try {
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) {
-        _error = 'Không có token xác thực';
-        notifyListeners();
-        return false;
-      }
-      final response = await _apiService.createProduct(request, token: token);
-      if (response.success && response.data != null) {
-        _products.add(response.data!);
-        _filterProducts(); // Re-filter after adding
-        notifyListeners();
-        return true;
-      } else {
-        _error = response.message;
-        return false;
-      }
-    } catch (e) {
-      _error = 'Lỗi mạng: ${e.toString()}';
-      return false;
+    final response = await _repository.createProduct(request);
+    if (response.success && response.data != null) {
+      _products.add(response.data!);
+      notifyListeners();
+      return true;
     }
+    _error = response.message;
+    notifyListeners();
+    return false;
   }
 
   Future<bool> updateProduct(int id, CreateProductRequest request) async {
-    try {
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) {
-        _error = 'Không có token xác thực';
+    final response = await _repository.updateProduct(id, request);
+    if (response.success && response.data != null) {
+      final index = _products.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        _products[index] = response.data!;
         notifyListeners();
-        return false;
       }
-      final response = await _apiService.updateProduct(
-        id,
-        request,
-        token: token,
-      );
-      if (response.success && response.data != null) {
-        final index = _products.indexWhere((p) => p.id == id);
-        if (index != -1) {
-          _products[index] = response.data!;
-          _filterProducts(); // Re-filter after updating
-          notifyListeners();
-        }
-        return true;
-      } else {
-        _error = response.message;
-        return false;
-      }
-    } catch (e) {
-      _error = 'Lỗi mạng: ${e.toString()}';
-      return false;
+      return true;
     }
+    _error = response.message;
+    notifyListeners();
+    return false;
   }
 
   Future<bool> deleteProduct(int id) async {
-    try {
-      final token = await _authService.getToken();
-      if (token == null || token.isEmpty) {
-        _error = 'Không có token xác thực';
-        notifyListeners();
-        return false;
-      }
-      final response = await _apiService.deleteProduct(id, token: token);
-      if (response.success) {
-        _products.removeWhere((p) => p.id == id);
-        _filterProducts(); // Re-filter after deleting
-        notifyListeners();
-        return true;
-      } else {
-        _error = response.message;
-        return false;
-      }
-    } catch (e) {
-      _error = 'Lỗi mạng: ${e.toString()}';
-      return false;
+    final response = await _repository.deleteProduct(id);
+    if (response.success) {
+      _products.removeWhere((p) => p.id == id);
+      notifyListeners();
+      return true;
     }
+    _error = response.message;
+    notifyListeners();
+    return false;
+  }
+
+  void updateSearchQuery(String query) {
+    _searchQuery = query;
+    loadProducts(search: query);
+  }
+
+  void updateSort(String? sortBy, String? sortOrder) {
+    _sortBy = sortBy;
+    _sortOrder = sortOrder;
+    loadProducts(sortBy: sortBy, sortOrder: sortOrder);
+  }
+
+  void updateInStockFilter(bool? inStock) {
+    _inStock = inStock;
+    loadProducts(inStock: inStock);
+  }
+
+  void resetFilters() {
+    _searchQuery = '';
+    _sortBy = null;
+    _sortOrder = null;
+    _inStock = null;
+    loadProducts();
   }
 }

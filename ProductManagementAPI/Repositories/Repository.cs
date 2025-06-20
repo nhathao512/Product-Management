@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProductManagementAPI.Data;
 using System.Linq.Expressions;
 
@@ -43,6 +43,11 @@ namespace ProductManagementAPI.Repositories
         public async Task DeleteAsync(T entity)
         {
             _dbSet.Remove(entity);
+        }
+
+        public IQueryable<T> GetQueryable()
+        {
+            return _dbSet.AsQueryable();
         }
     }
 }

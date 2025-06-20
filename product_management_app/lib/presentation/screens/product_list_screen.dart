@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:product_management_app/presentation/widgets/common/logout_dialog.dart';
+import 'package:product_management_app/presentation/widgets/common/search_and_filter.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
-import '../providers/auth_provider.dart';
 import '../providers/product_provider.dart';
-import '../widgets/common/search_bar.dart';
-import '../widgets/common/filter_chips.dart';
-import '../widgets/common/search_results.dart';
 import '../widgets/product/product_card.dart';
 import '../widgets/state/loading_widget.dart';
 import '../widgets/state/empty_widget.dart';
@@ -25,12 +23,14 @@ class _ProductListScreenState extends State<ProductListScreen>
   late AnimationController _listController;
   late Animation<double> _fabAnimation;
   late Animation<double> _listAnimation;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
     _loadData();
+    _searchController.addListener(_onSearchChanged);
   }
 
   void _initializeAnimations() {
@@ -60,12 +60,18 @@ class _ProductListScreenState extends State<ProductListScreen>
     });
   }
 
+  void _onSearchChanged() {
+    context.read<ProductProvider>().updateSearchQuery(_searchController.text);
+  }
+
   Future<void> _onRefresh() async {
     await context.read<ProductProvider>().loadProducts();
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
     _fabController.dispose();
     _listController.dispose();
     super.dispose();
@@ -91,7 +97,7 @@ class _ProductListScreenState extends State<ProductListScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => _showLogoutDialog(),
+            onPressed: () => showLogoutDialog(context),
             tooltip: 'Đăng xuất',
           ),
         ],
@@ -106,33 +112,19 @@ class _ProductListScreenState extends State<ProductListScreen>
         ),
         child: Column(
           children: [
-            // Search Bar
-            const ProductSearchBar(),
-
-            // Filter Chips
-            const FilterChips(),
-
-            // Search Results Info
-            const SearchResults(),
-
-            // Product List
+            SearchAndFilter(searchController: _searchController),
             Expanded(
               child: Consumer<ProductProvider>(
                 builder: (context, provider, child) {
                   if (provider.isLoading) {
                     return const LoadingWidget();
                   }
-
                   if (provider.error.isNotEmpty) {
                     return custom_widgets.ErrorWidget(provider);
                   }
-
                   if (provider.products.isEmpty) {
-                    return provider.searchQuery.isNotEmpty
-                        ? _buildNoSearchResults(provider.searchQuery)
-                        : const EmptyWidget();
+                    return const EmptyWidget();
                   }
-
                   return FadeTransition(
                     opacity: _listAnimation,
                     child: RefreshIndicator(
@@ -165,7 +157,7 @@ class _ProductListScreenState extends State<ProductListScreen>
       floatingActionButton: ScaleTransition(
         scale: _fabAnimation,
         child: FloatingActionButton.extended(
-          onPressed: () => _navigateToProductForm(),
+          onPressed: _navigateToProductForm,
           icon: const Icon(Icons.add),
           label: const Text('Thêm sản phẩm'),
           backgroundColor: AppColors.primary,
@@ -174,87 +166,6 @@ class _ProductListScreenState extends State<ProductListScreen>
           heroTag: "addProduct",
         ),
       ),
-    );
-  }
-
-  Widget _buildNoSearchResults(String query) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.search_off, size: 80, color: Colors.grey.shade400),
-          const SizedBox(height: 24),
-          Text(
-            'Không tìm thấy kết quả',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Không có sản phẩm nào phù hợp với "$query"',
-            style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              context.read<ProductProvider>().clearSearch();
-            },
-            icon: const Icon(Icons.clear),
-            label: const Text('Xóa tìm kiếm'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: const Row(
-              children: [
-                Icon(Icons.logout, color: Colors.orange, size: 24),
-                SizedBox(width: 8),
-                Text('Xác nhận đăng xuất'),
-              ],
-            ),
-            content: const Text('Bạn có chắc muốn đăng xuất khỏi ứng dụng?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Hủy'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final authProvider = context.read<AuthProvider>();
-                  await authProvider.logout();
-                  if (mounted) {
-                    Navigator.of(context).pop();
-                    Navigator.pushReplacementNamed(context, '/login');
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Đăng xuất'),
-              ),
-            ],
-          ),
     );
   }
 

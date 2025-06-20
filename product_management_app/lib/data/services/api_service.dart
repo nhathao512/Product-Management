@@ -29,13 +29,52 @@ class ApiService {
     );
   }
 
-  Future<ApiResponse<List<Product>>> getProducts({String? token}) async {
+  Future<ApiResponse<List<Product>>> getProducts({
+    String? token,
+    String? search,
+    String? sortBy,
+    String? sortOrder,
+    bool? inStock,
+    int? page,
+    int? limit,
+  }) async {
     try {
-      Dio newDio = _dio; // Tạo một instance mới để thêm token
+      Dio newDio = _dio;
       if (token != null && token.isNotEmpty) {
         newDio.options.headers['Authorization'] = 'Bearer $token';
       }
-      final response = await newDio.get('/products');
+
+      Map<String, dynamic> queryParams = {};
+
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+
+      if (sortBy != null) {
+        queryParams['sortBy'] = sortBy;
+      }
+
+      if (sortOrder != null) {
+        queryParams['sortOrder'] = sortOrder;
+      }
+
+      if (inStock != null) {
+        queryParams['inStock'] = inStock;
+      }
+
+      if (page != null) {
+        queryParams['page'] = page;
+      }
+
+      if (limit != null) {
+        queryParams['limit'] = limit;
+      }
+
+      final response = await newDio.get(
+        '/products',
+        queryParameters: queryParams,
+      );
+
       if (response.statusCode == 200) {
         return ApiResponse<List<Product>>.fromJson(
           response.data,

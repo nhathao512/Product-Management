@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using ProductManagementAPI.DTOs;
+using ProductManagementAPI.Features.Auth.Commands;
 using ProductManagementAPI.Models;
-using ProductManagementAPI.Services;
 
 namespace ProductManagementAPI.Controllers
 {
@@ -9,86 +10,27 @@ namespace ProductManagementAPI.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthService _authService;
-        private readonly ILogger<AuthController> _logger;
+        private readonly IMediator _mediator;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(IMediator mediator)
         {
-            _authService = authService;
-            _logger = logger;
+            _mediator = mediator;
         }
 
         [HttpPost("register")]
         public async Task<ActionResult> Register([FromBody] RegisterDto registerDto)
         {
-            try
-            {
-                var user = await _authService.RegisterAsync(registerDto);
-                if (user != null) 
-                {
-                    return Ok(new ApiResponse<UserDto>
-                    {
-                        Success = true,
-                        Data = new UserDto
-                        {
-                            Id = user.UserId,
-                            UserName = user.UserName,
-                            Email = user.Email
-                        },
-                        Message = "User registered successfully"
-                    });
-                }
-
-                return BadRequest(new ApiResponse<UserDto>
-                {
-                    Success = false,
-                    Message = "Username or Email already exists"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error registering user");
-                return StatusCode(500, new ApiResponse<UserDto>
-                {
-                    Success = false,
-                    Message = "Internal server error occurred",
-                    Errors = new[] { ex.Message }
-                });
-            }
+            var command = new RegisterCommand { RegisterDto = registerDto };
+            var result = await _mediator.Send(command);
+            return result.Success ? Ok(result) : result.Message == "Username or Email already exists" ? BadRequest(result) : StatusCode(500, result);
         }
 
         [HttpPost("login")]
         public async Task<ActionResult> Login([FromBody] LoginDto loginDto)
         {
-            try
-            {
-                var authResponse = await _authService.LoginAsync(loginDto);
-                if (authResponse != null)
-                {
-                    return Ok(new ApiResponse<AuthResponseDto>
-                    {
-                        Success = true,
-                        Data = authResponse,
-                        Message = "Login successful"
-                    });
-                }
-
-                return Unauthorized(new ApiResponse<AuthResponseDto>
-                {
-                    Success = false,
-                    Message = "Invalid username or password"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error logging in");
-                return StatusCode(500, new ApiResponse<AuthResponseDto>
-                {
-                    Success = false,
-                    Message = "Internal server error",
-                    Errors = new[] { ex.Message }
-                });
-            };
+            var command = new LoginCommand { LoginDto = loginDto };
+            var result = await _mediator.Send(command);
+            return result.Success ? Ok(result) : result.Message == "Invalid username or password" ? Unauthorized(result) : StatusCode(500, result);
         }
     }
 }
