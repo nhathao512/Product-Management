@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagementAPI.DTOs;
 using ProductManagementAPI.Features.Auth.Commands;
-using ProductManagementAPI.Models;
 
 namespace ProductManagementAPI.Controllers
 {

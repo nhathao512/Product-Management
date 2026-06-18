@@ -36,14 +36,16 @@ namespace ProductManagementAPI.Data
                     .HasMaxLength(255);
 
                 entity.Property(e => e.CreatedAt)
-                    .HasDefaultValueSql("GETDATE()");
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                 entity.Property(e => e.UpdatedAt)
-                    .HasDefaultValueSql("GETDATE()");
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
-                // Add database constraints for data integrity
-                entity.HasCheckConstraint("CK_Product_Price", "[Price] > 0");
-                entity.HasCheckConstraint("CK_Product_Stock", "[Stock] >= 0");
+                entity.ToTable("Products", t =>
+                {
+                    t.HasCheckConstraint("CK_Product_Price", "Price > 0");
+                    t.HasCheckConstraint("CK_Product_Stock", "Stock >= 0");
+                });
             });
 
             modelBuilder.Entity<User>(entity =>
